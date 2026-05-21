@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Queue - Student</title>
+    <style>
+        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --dark: #1f2937; --light: #f3f4f6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light); margin: 0; padding: 15px; color: var(--dark); }
+        .container { max-width: 500px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1, h3 { text-align: center; color: var(--primary); margin-top: 0; }
+        input[type="text"] { width: 100%; padding: 14px; margin: 15px 0; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background-color: var(--accent); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .view { display: none; }
+        .active-view { display: block; }
+        .ticket-box { text-align: center; background: #eff6ff; border: 2px dashed var(--accent); padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .ticket-number { font-size: 48px; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.98); color: white; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
+        .overlay h1 { color: white; font-size: 50px; }
+        .btn-dismiss { background: white; color: var(--success); width: auto; padding: 12px 40px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- REGISTRATION VIEW -->
+    <div id="registerView" class="view active-view">
+        <h1>📚 Library Queue</h1>
+        <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
+        <input type="text" id="studentName" placeholder="Enter Full Name" required>
+        <button onclick="joinQueue()">Get Ticket Number</button>
+    </div>
+
+    <!-- WAITING VIEW -->
+    <div id="waitView" class="view">
+        <h1>🎟️ Your Queue Ticket</h1>
+        <div class="ticket-box">
+            <div>Your Number</div>
+            <div id="myTicketNumber" class="ticket-number">#000</div>
+            <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
+        </div>
+        <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
+        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open. Your phone will beep and flash when called!</p>
+    </div>
+</div>
+
+<!-- TURN OVERLAY -->
+<div id="notificationOverlay" class="overlay">
+    <h1>YOUR TURN! 🔔</h1>
+    <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
+    <p>Please head over to the librarian's desk now.</p>
+    <button class="btn-dismiss" onclick="dismissNotification()">OK, I am heading over</button>
+</div>
+
+<!-- Firebase SDK Modules -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot, updateDoc, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // ⚠️ PASTE YOUR FIREBASE CONFIG CONFIGURATION OBJECT HERE:
+    const firebaseConfig = {
+  	apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
+ 	authDomain: "queueing-system-01.firebaseapp.com",
+  	projectId: "queueing-system-01",
+  	storageBucket: "queueing-system-01.firebasestorage.app",
+  	messagingSenderId: "524535705279",
+  	appId: "1:524535705279:web:a579726cce8aab2e69600a"
+	};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let myStudentId = localStorage.getItem('lib_student_id') || null;
+    let unsubscribe = null;
+
+    window.joinQueue = async function() {
+        const nameInput = document.getElementById('studentName');
+        const name = nameInput.value.trim();
+        if (!name) return alert('Please enter your name');
+
+        myStudentId = 'student_' + Date.now();
+        localStorage.setItem('lib_student_id', myStudentId);
+
+        try {
+            // Safe sequential ticket generator using a multi-device transaction
+            await runTransaction(db, async (transaction) => {
+                const counterRef = doc(db, "config", "counter");
+                const counterSnap = await transaction.get(counterRef);
+                
+                let nextNum = 1;
+                if (counterSnap.exists()) {
+                    nextNum = counterSnap.data().currentValue + 1;
+                }
+                
+                transaction.set(counterRef, { currentValue: nextNum }, { merge: true });
+
+                const ticketString = '#' + String(nextNum).padStart(3, '0');
+                const studentRef = doc(db, "queue", myStudentId);
+                
+                transaction.set(studentRef, {
+                    id: myStudentId,
+                    name: name,
+                    ticket: ticketString,
+                    status: 'waiting',
+                    timestamp: Date.now()
+                });
+
+                document.getElementById('myTicketNumber').innerText = ticketString;
+                document.getElementById('myTicketName').innerText = name;
+            });
+
+            startListening();
+        } catch (e) {
+            alert("Error joining queue: " + e.message);
+        }
+    }
+
+    function startListening() {
+        if (!myStudentId) return;
+        
+        document.getElementById('registerView').classList.remove('active-view');
+        document.getElementById('waitView').classList.add('active-view');
+
+        // Watch cloud document for live changes from the librarian
+        unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
+            if (!docSnap.exists()) {
+                resetUI();
+                return;
+            }
+            const data = docSnap.data();
+            document.getElementById('myStatus').innerText = data.status.toUpperCase();
+
+            if (data.status === 'called') {
+                triggerNotification(data.ticket);
+            }
+        });
+    }
+
+    function triggerNotification(ticket) {
+        document.getElementById('calledTicketDisplay').innerText = ticket;
+        document.getElementById('notificationOverlay').style.display = 'flex';
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            osc.connect(context.destination);
+            osc.start(); osc.stop(context.currentTime + 0.4);
+        } catch(e){}
+    }
+
+    window.dismissNotification = async function() {
+        document.getElementById('notificationOverlay').style.display = 'none';
+        if (myStudentId) {
+            await updateDoc(doc(db, "queue", myStudentId), { status: 'completed' });
+            localStorage.removeItem('lib_student_id');
+            myStudentId = null;
+            if(unsubscribe) unsubscribe();
+            resetUI();
+        }
+    }
+
+    function resetUI() {
+        document.getElementById('studentName').value = '';
+        document.getElementById('waitView').classList.remove('active-view');
+        document.getElementById('registerView').classList.add('active-view');
+    }
+
+    // Check if returning user is already waiting
+    if (myStudentId) { startListening(); }
+</script>
+</body>
+</html>
