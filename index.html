@@ -23,15 +23,13 @@
 <body>
 
 <div class="container">
-    <!-- REGISTRATION VIEW -->
     <div id="registerView" class="view active-view">
         <h1>📚 Library Queue</h1>
         <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
-        <input type="text" id="studentName" placeholder="Enter your Full Name" required>
+        <input type="text" id="studentName" placeholder="Enter Full Name" required>
         <button onclick="joinQueue()">Get Ticket Number</button>
     </div>
 
-    <!-- WAITING VIEW -->
     <div id="waitView" class="view">
         <h1>🎟️ Your Queue Ticket</h1>
         <div class="ticket-box">
@@ -44,28 +42,25 @@
     </div>
 </div>
 
-<!-- TURN OVERLAY -->
 <div id="notificationOverlay" class="overlay">
     <h1>YOUR TURN! 🔔</h1>
     <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
-    <p>Please head over to the Information desk now.</p>
+    <p>Please head over to the librarian's desk now.</p>
     <button class="btn-dismiss" onclick="dismissNotification()">OK, I am heading over</button>
 </div>
 
-<!-- Firebase SDK Modules -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot, updateDoc, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ⚠️ PASTE YOUR FIREBASE CONFIG CONFIGURATION OBJECT HERE:
     const firebaseConfig = {
-  	apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
- 	authDomain: "queueing-system-01.firebaseapp.com",
-  	projectId: "queueing-system-01",
-  	storageBucket: "queueing-system-01.firebasestorage.app",
-  	messagingSenderId: "524535705279",
-  	appId: "1:524535705279:web:a579726cce8aab2e69600a"
-	};
+        apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
+        authDomain: "queueing-system-01.firebaseapp.com",
+        projectId: "queueing-system-01",
+        storageBucket: "queueing-system-01.firebasestorage.app",
+        messagingSenderId: "524535705279",
+        appId: "1:524535705279:web:a579726cce8aab2e69600a"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -82,17 +77,31 @@
         localStorage.setItem('lib_student_id', myStudentId);
 
         try {
-            // Safe sequential ticket generator using a multi-device transaction
             await runTransaction(db, async (transaction) => {
                 const counterRef = doc(db, "config", "counter");
                 const counterSnap = await transaction.get(counterRef);
                 
                 let nextNum = 1;
+                const now = Date.now();
+                const oneHourInMs = 30 * 1000; // 3,600,000 milliseconds
+
                 if (counterSnap.exists()) {
-                    nextNum = counterSnap.data().currentValue + 1;
+                    const data = counterSnap.data();
+                    const lastActivity = data.lastActiveTime || 0;
+
+                    // If more than 1 hour has passed since the last person joined, reset to 1
+                    if (now - lastActivity > oneHourInMs) {
+                        nextNum = 1;
+                    } else {
+                        nextNum = data.currentValue + 1;
+                    }
                 }
                 
-                transaction.set(counterRef, { currentValue: nextNum }, { merge: true });
+                // Save both the current ticket number AND the current time to the database
+                transaction.set(counterRef, { 
+                    currentValue: nextNum,
+                    lastActiveTime: now 
+                }, { merge: true });
 
                 const ticketString = '#' + String(nextNum).padStart(3, '0');
                 const studentRef = doc(db, "queue", myStudentId);
@@ -102,7 +111,7 @@
                     name: name,
                     ticket: ticketString,
                     status: 'waiting',
-                    timestamp: Date.now()
+                    timestamp: now
                 });
 
                 document.getElementById('myTicketNumber').innerText = ticketString;
@@ -121,7 +130,6 @@
         document.getElementById('registerView').classList.remove('active-view');
         document.getElementById('waitView').classList.add('active-view');
 
-        // Watch cloud document for live changes from the librarian
         unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
             if (!docSnap.exists()) {
                 resetUI();
@@ -164,7 +172,6 @@
         document.getElementById('registerView').classList.add('active-view');
     }
 
-    // Check if returning user is already waiting
     if (myStudentId) { startListening(); }
 </script>
 </body>
