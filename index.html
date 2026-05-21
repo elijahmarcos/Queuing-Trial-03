@@ -83,7 +83,7 @@
                 
                 let nextNum = 1;
                 const now = Date.now();
-                const oneHourInMs = 30 * 1000; // 3,600,000 milliseconds
+                const oneHourInMs = 60 * 60 * 1000; // 3,600,000 milliseconds
 
                 if (counterSnap.exists()) {
                     const data = counterSnap.data();
