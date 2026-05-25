@@ -24,30 +24,37 @@
 
 <div class="container">
     <div id="registerView" class="view active-view">
-        <h1>📚 Library Queue</h1>
+        <h1>e-Library Queuing System</h1>
         <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
-        <input type="text" id="studentName" placeholder="Enter Full Name" required>
-        <button onclick="joinQueue()">Get Ticket Number</button>
+        <input type="text" id="studentName" placeholder="Surname, First Name, M.I." required>
+        <button onclick="joinQueue()">Get Queuing Number</button>
     </div>
 
-    <div id="waitView" class="view">
-        <h1>🎟️ Your Queue Ticket</h1>
+    <div id="waitView" class="view" >
+        <h1>Your Queue Ticket</h1>
         <div class="ticket-box">
             <div>Your Number</div>
             <div id="myTicketNumber" class="ticket-number">#000</div>
             <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
         </div>
         <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
-        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open.</p>
+        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open. Your phone will beep and flash when called!</p>
     </div>
 </div>
 
 <div id="notificationOverlay" class="overlay">
-    <h1>YOUR TURN! 🔔</h1>
+    <h1>🔔 YOUR TURN! 🔔</h1>
     <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
-    <p>Please head over to the librarian's desk now.</p>
+    <p>Please head over to the information desk now.</p>
     <button class="btn-dismiss" onclick="dismissNotification()">OK, I am heading over</button>
 </div>
+
+<style>
+	body {
+	background-image: url('background03.png');
+	background-size: cover;
+}
+</style>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -83,7 +90,7 @@
                 
                 let nextNum = 1;
                 const now = Date.now();
-                const oneHourInMs = 60 * 60 * 1000; // 3,600,000 milliseconds
+                const oneHourInMs = 30 * 1000; // 3,600,000 milliseconds
 
                 if (counterSnap.exists()) {
                     const data = counterSnap.data();
