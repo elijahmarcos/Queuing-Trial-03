@@ -4,64 +4,236 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Queue - Student</title>
+
     <style>
-        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --dark: #1f2937; --light: #f3f4f6; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light); margin: 0; padding: 15px; color: var(--dark);}
-        .container { max-width: 500px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1, h3 { text-align: center; color: var(--primary); margin-top: 0; }
-        input[type="text"] { width: 100%; padding: 14px; margin: 15px 0; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background-color: var(--accent); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .view { display: none; }
-        .active-view { display: block; }
-        .ticket-box { text-align: center; background: #eff6ff; border: 2px dashed var(--accent); padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .ticket-number { font-size: 48px; font-weight: bold; color: var(--primary); margin: 10px 0; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.98); color: white; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
-        .overlay h1 { color: white; font-size: 50px; }
-        .btn-dismiss { background: white; color: var(--success); width: auto; padding: 12px 40px; }
-		
+        :root {
+            --primary: #1e3a8a;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--light);
+            margin: 0;
+            padding: 15px;
+            color: var(--dark);
+
+            background-image: url('https://github.com/elijahmarcos/Queuing-Trial-03/blob/main/background03.png');
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        h1, h3 {
+            text-align: center;
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            margin: 15px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--accent);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .active-view {
+            display: block;
+        }
+
+        .ticket-box {
+            text-align: center;
+            background: #eff6ff;
+            border: 2px dashed var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .ticket-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(16, 185, 129, 0.98);
+            color: white;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .overlay h1 {
+            color: white;
+            font-size: 50px;
+        }
+
+        .btn-dismiss {
+            background: white;
+            color: var(--success);
+            width: auto;
+            padding: 12px 40px;
+        }
     </style>
 </head>
+
 <body>
 
 <div class="container">
+
+    <!-- REGISTRATION VIEW -->
     <div id="registerView" class="view active-view">
+
         <h1>e-Library Queuing System</h1>
-        <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
-        <input type="text" id="studentName" placeholder="Surname, First Name, M.I." required>
-        <button onclick="joinQueue()">Get Queuing Number</button>
+
+        <p style="text-align:center; color:#6b7280;">
+            Scan successful! Enter your name to queue up.
+        </p>
+
+        <input
+            type="text"
+            id="studentName"
+            placeholder="Surname, First Name, M.I."
+            required
+        >
+
+        <button id="queueButton" onclick="joinQueue()">
+            Get Queuing Number
+        </button>
+
     </div>
 
-    <div id="waitView" class="view" >
+    <!-- WAITING VIEW -->
+    <div id="waitView" class="view">
+
         <h1>Your Queue Ticket</h1>
+
         <div class="ticket-box">
+
             <div>Your Number</div>
-            <div id="myTicketNumber" class="ticket-number">#000</div>
-            <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
+
+            <div id="myTicketNumber" class="ticket-number">
+                #000
+            </div>
+
+            <div>
+                Name:
+                <span id="myTicketName" style="font-weight:600;"></span>
+            </div>
+
         </div>
-        <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
-        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open. Your phone will beep and flash when called!</p>
+
+        <h3 style="color: #4b5563;">
+
+            Current Status:
+            <span id="myStatus" style="color:var(--accent);">
+                Waiting...
+            </span>
+
+        </h3>
+
+        <p style="text-align:center; color: #6b7280; font-size: 14px;">
+            Keep this tab open. Your phone will beep and flash when called!
+        </p>
+
     </div>
+
 </div>
 
+<!-- NOTIFICATION OVERLAY -->
 <div id="notificationOverlay" class="overlay">
-    <h1>🔔 YOUR TURN! 🔔</h1>
-    <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
-    <p>Please head over to the information desk now.</p>
-    <button class="btn-dismiss" onclick="dismissNotification()">OK, I am heading over</button>
-</div>
 
-<style>
-	body {
-		background-image: url('https://github.com/elijahmarcos/Queuing-Trial-03/blob/main/background03.png');
-		background-repeat: no-repeat;
-  		background-attachment: fixed;
-		background-size: cover;
-	}
-</style>
+    <h1>🔔 YOUR TURN! 🔔</h1>
+
+    <div
+        id="calledTicketDisplay"
+        style="font-size: 70px; font-weight: bold; margin: 20px 0;"
+    >
+        #000
+    </div>
+
+    <p>Please head over to the information desk now.</p>
+
+    <button class="btn-dismiss" onclick="dismissNotification()">
+        OK, I am heading over
+    </button>
+
+</div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    /*
+    =========================================================
+    FIREBASE IMPORTS
+    =========================================================
+    */
+
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+
+    import {
+        getFirestore,
+        doc,
+        collection,
+        onSnapshot,
+        updateDoc,
+        runTransaction
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    /*
+    =========================================================
+    FIREBASE CONFIGURATION
+    =========================================================
+    */
 
     const firebaseConfig = {
         apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
@@ -72,117 +244,374 @@
         appId: "1:524535705279:web:a579726cce8aab2e69600a"
     };
 
+    /*
+    =========================================================
+    INITIALIZE FIREBASE
+    =========================================================
+    */
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    /*
+    =========================================================
+    LOCAL VARIABLES
+    =========================================================
+    */
+
+    // Stores current student ID
     let myStudentId = localStorage.getItem('lib_student_id') || null;
+
+    // Used to stop Firestore listener later
     let unsubscribe = null;
 
-    window.joinQueue = async function() {
+    /*
+    =========================================================
+    JOIN QUEUE FUNCTION
+    =========================================================
+    */
+
+    window.joinQueue = async function () {
+
+        // Prevent double-click spam
+        const button = document.getElementById('queueButton');
+        button.disabled = true;
+
+        // Get entered student name
         const nameInput = document.getElementById('studentName');
         const name = nameInput.value.trim();
-        if (!name) return alert('Please enter your name');
 
-        myStudentId = 'student_' + Date.now();
-        localStorage.setItem('lib_student_id', myStudentId);
+        // Prevent empty names
+        if (!name) {
+            button.disabled = false;
+            return alert('Please enter your name');
+        }
 
         try {
+
+            /*
+            =========================================================
+            FIRESTORE TRANSACTION
+            =========================================================
+
+            Transactions prevent multiple devices from
+            receiving the same queue number.
+
+            Example:
+            Device A -> #001
+            Device B -> #002
+
+            Even if they click at the same time.
+            =========================================================
+            */
+
             await runTransaction(db, async (transaction) => {
+
+                // Reference to global counter document
                 const counterRef = doc(db, "config", "counter");
+
+                // Read current counter data
                 const counterSnap = await transaction.get(counterRef);
-                
+
                 let nextNum = 1;
+
+                // Current timestamp
                 const now = Date.now();
-                const oneHourInMs = 30 * 1000; // 3,600,000 milliseconds
+
+                /*
+                =========================================================
+                RESET COUNTER AFTER 1 HOUR OF INACTIVITY
+                =========================================================
+                */
+
+                const oneHourInMs = 60 * 60 * 1000;
 
                 if (counterSnap.exists()) {
+
                     const data = counterSnap.data();
+
+                    // Last time someone joined queue
                     const lastActivity = data.lastActiveTime || 0;
 
-                    // If more than 1 hour has passed since the last person joined, reset to 1
+                    // Reset numbering if inactive too long
                     if (now - lastActivity > oneHourInMs) {
+
                         nextNum = 1;
+
                     } else {
-                        nextNum = data.currentValue + 1;
+
+                        // Safely increment queue number
+                        nextNum = (data.currentValue || 0) + 1;
                     }
                 }
-                
-                // Save both the current ticket number AND the current time to the database
-                transaction.set(counterRef, { 
+
+                /*
+                =========================================================
+                SAVE UPDATED COUNTER
+                =========================================================
+                */
+
+                transaction.set(counterRef, {
                     currentValue: nextNum,
-                    lastActiveTime: now 
+                    lastActiveTime: now
                 }, { merge: true });
 
-                const ticketString = '#' + String(nextNum).padStart(3, '0');
-                const studentRef = doc(db, "queue", myStudentId);
-                
+                /*
+                =========================================================
+                FORMAT TICKET NUMBER
+
+                Example:
+                1 -> #001
+                12 -> #012
+                =========================================================
+                */
+
+                const ticketString =
+                    '#' + String(nextNum).padStart(3, '0');
+
+                /*
+                =========================================================
+                CREATE UNIQUE FIREBASE DOCUMENT ID
+
+                IMPORTANT:
+                This fixes the duplicate ID issue.
+
+                BEFORE:
+                student_ + Date.now()
+
+                AFTER:
+                Firebase auto-generates truly unique IDs.
+                =========================================================
+                */
+
+                const studentRef = doc(collection(db, "queue"));
+
+                // Save generated ID locally
+                myStudentId = studentRef.id;
+
+                localStorage.setItem(
+                    'lib_student_id',
+                    myStudentId
+                );
+
+                /*
+                =========================================================
+                SAVE STUDENT QUEUE RECORD
+                =========================================================
+                */
+
                 transaction.set(studentRef, {
+
+                    // Unique student ID
                     id: myStudentId,
+
+                    // Student name
                     name: name,
+
+                    // Queue number
                     ticket: ticketString,
+
+                    // Queue status
                     status: 'waiting',
+
+                    // Timestamp
                     timestamp: now
                 });
 
-                document.getElementById('myTicketNumber').innerText = ticketString;
-                document.getElementById('myTicketName').innerText = name;
+                /*
+                =========================================================
+                UPDATE USER INTERFACE
+                =========================================================
+                */
+
+                document.getElementById(
+                    'myTicketNumber'
+                ).innerText = ticketString;
+
+                document.getElementById(
+                    'myTicketName'
+                ).innerText = name;
             });
 
+            // Start listening for updates
             startListening();
+
         } catch (e) {
+
             alert("Error joining queue: " + e.message);
+
+            // Re-enable button if error occurs
+            button.disabled = false;
         }
     }
 
+    /*
+    =========================================================
+    START REAL-TIME LISTENER
+    =========================================================
+    */
+
     function startListening() {
+
         if (!myStudentId) return;
-        
-        document.getElementById('registerView').classList.remove('active-view');
-        document.getElementById('waitView').classList.add('active-view');
 
-        unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
-            if (!docSnap.exists()) {
-                resetUI();
-                return;
-            }
-            const data = docSnap.data();
-            document.getElementById('myStatus').innerText = data.status.toUpperCase();
+        // Switch UI views
+        document.getElementById('registerView')
+            .classList.remove('active-view');
 
-            if (data.status === 'called') {
-                triggerNotification(data.ticket);
+        document.getElementById('waitView')
+            .classList.add('active-view');
+
+        /*
+        =========================================================
+        REAL-TIME FIRESTORE LISTENER
+
+        This updates the UI automatically whenever
+        queue status changes.
+        =========================================================
+        */
+
+        unsubscribe = onSnapshot(
+
+            doc(db, "queue", myStudentId),
+
+            (docSnap) => {
+
+                // If queue entry deleted
+                if (!docSnap.exists()) {
+                    resetUI();
+                    return;
+                }
+
+                const data = docSnap.data();
+
+                // Update current status
+                document.getElementById('myStatus')
+                    .innerText = data.status.toUpperCase();
+
+                // Trigger notification if called
+                if (data.status === 'called') {
+                    triggerNotification(data.ticket);
+                }
             }
-        });
+        );
     }
+
+    /*
+    =========================================================
+    TRIGGER SOUND + OVERLAY NOTIFICATION
+    =========================================================
+    */
 
     function triggerNotification(ticket) {
-        document.getElementById('calledTicketDisplay').innerText = ticket;
-        document.getElementById('notificationOverlay').style.display = 'flex';
+
+        // Display called ticket
+        document.getElementById(
+            'calledTicketDisplay'
+        ).innerText = ticket;
+
+        // Show overlay
+        document.getElementById(
+            'notificationOverlay'
+        ).style.display = 'flex';
+
+        /*
+        =========================================================
+        PLAY BEEP SOUND
+        =========================================================
+        */
+
         try {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
+
+            const context =
+                new (window.AudioContext || window.webkitAudioContext)();
+
             const osc = context.createOscillator();
+
             osc.connect(context.destination);
-            osc.start(); osc.stop(context.currentTime + 0.4);
-        } catch(e){}
+
+            osc.start();
+
+            osc.stop(context.currentTime + 0.4);
+
+        } catch(e) {}
     }
 
-    window.dismissNotification = async function() {
-        document.getElementById('notificationOverlay').style.display = 'none';
+    /*
+    =========================================================
+    DISMISS NOTIFICATION
+    =========================================================
+    */
+
+    window.dismissNotification = async function () {
+
+        // Hide overlay
+        document.getElementById(
+            'notificationOverlay'
+        ).style.display = 'none';
+
         if (myStudentId) {
-            await updateDoc(doc(db, "queue", myStudentId), { status: 'completed' });
+
+            /*
+            =========================================================
+            MARK QUEUE AS COMPLETED
+            =========================================================
+            */
+
+            await updateDoc(
+                doc(db, "queue", myStudentId),
+                { status: 'completed' }
+            );
+
+            // Clear local storage
             localStorage.removeItem('lib_student_id');
+
             myStudentId = null;
-            if(unsubscribe) unsubscribe();
+
+            // Stop listener
+            if (unsubscribe) unsubscribe();
+
+            // Reset interface
             resetUI();
         }
     }
 
+    /*
+    =========================================================
+    RESET USER INTERFACE
+    =========================================================
+    */
+
     function resetUI() {
+
+        // Clear textbox
         document.getElementById('studentName').value = '';
-        document.getElementById('waitView').classList.remove('active-view');
-        document.getElementById('registerView').classList.add('active-view');
+
+        // Switch views
+        document.getElementById('waitView')
+            .classList.remove('active-view');
+
+        document.getElementById('registerView')
+            .classList.add('active-view');
+
+        // Re-enable button
+        document.getElementById('queueButton').disabled = false;
     }
 
-    if (myStudentId) { startListening(); }
+    /*
+    =========================================================
+    AUTO-RESTORE SESSION
+
+    If user refreshes page, continue listening
+    to existing queue ticket.
+    =========================================================
+    */
+
+    if (myStudentId) {
+        startListening();
+    }
+
 </script>
+
 </body>
 </html>
