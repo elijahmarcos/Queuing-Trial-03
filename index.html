@@ -3,209 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Queue Trial</title>
-
+    <title>Library Queue - Student</title>
     <style>
-        :root {
-            --primary: #1e3a8a;
-            --accent: #3b82f6;
-            --success: #10b981;
-            --dark: #1f2937;
-            --light: #f3f4f6;
-        }
+        :root { --primary: #1e3a8a; --accent: #3b82f6; --success: #10b981; --dark: #1f2937; --light: #f3f4f6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light); margin: 0; padding: 15px; color: var(--dark); }
+        .container { max-width: 500px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1, h2, h3 { text-align: center; color: var(--primary); margin-top: 0; }
+        input[type="text"] { width: 100%; padding: 14px; margin: 15px 0; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background-color: var(--accent); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .view { display: none; }
+        .active-view { display: block; }
+        
+        /* Box displays for ticket tracking */
+        .ticket-box { text-align: center; background: #eff6ff; border: 2px dashed var(--accent); padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .ticket-number { font-size: 48px; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        
+        /* Full-screen pop-up overlay when called */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.98); color: white; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
+        .overlay h1 { color: white; font-size: 50px; }
+        .btn-dismiss { background: white; color: var(--success); width: auto; padding: 12px 40px; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--light);
-            margin: 0;
-            padding: 15px;
-            color: var(--dark);
-
-            background-image: url('https://github.com/elijahmarcos/Queuing-Trial-03/blob/main/background03.png');
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-size: cover;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 20px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        h1, h3 {
-            text-align: center;
-            color: var(--primary);
-            margin-top: 0;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 14px;
-            margin: 15px 0;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-
-        button {
-            width: 100%;
-            background-color: var(--accent);
-            color: white;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .view {
-            display: none;
-        }
-
-        .active-view {
-            display: block;
-        }
-
-        .ticket-box {
-            text-align: center;
-            background: #eff6ff;
-            border: 2px dashed var(--accent);
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .ticket-number {
-            font-size: 48px;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(16, 185, 129, 0.98);
-            color: white;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .overlay h1 {
-            color: white;
-            font-size: 50px;
-        }
-
-        .btn-dismiss {
-            background: white;
-            color: var(--success);
-            width: auto;
-            padding: 12px 40px;
-        }
+        /* Receipt View Formatting matching your design */
+        .receipt-container { text-align: center; padding: 40px 10px; }
+        .receipt-number { font-size: 90px; font-weight: bold; color: var(--primary); margin: 20px 0; }
+        .receipt-note { font-size: 18px; color: #333; margin-bottom: 50px; line-height: 1.4; }
+        .btn-done { background: transparent; color: #7f8c8d; border: 2px solid #bdc3c7; border-radius: 4px; padding: 12px 30px; width: auto; font-weight: normal; font-size: 18px; }
+        .btn-done:hover { background: #eee; }
     </style>
 </head>
-
 <body>
 
 <div class="container">
-
-    <!-- REGISTRATION VIEW -->
     <div id="registerView" class="view active-view">
-
-        <h1>e-Library Queuing System</h1>
-
-        <p style="text-align:center; color:#6b7280;">
-            Scan successful! Enter your name to queue up.
-        </p>
-
-        <input
-            type="text"
-            id="studentName"
-            placeholder="Surname, First Name, M.I."
-            required
-        >
-
-        <button id="queueButton" onclick="joinQueue()">
-            Get Queuing Number
-        </button>
-
+        <h1>📚 Library Queue</h1>
+        <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
+        <input type="text" id="studentName" placeholder="Enter Full Name" required>
+        <button onclick="joinQueue()">Get Ticket Number</button>
     </div>
 
-    <!-- WAITING VIEW -->
     <div id="waitView" class="view">
-
-        <h1>Your Queue Ticket</h1>
-
+        <h1>🎟️ Your Queue Ticket</h1>
         <div class="ticket-box">
-
             <div>Your Number</div>
-
-            <div id="myTicketNumber" class="ticket-number">
-                #000
-            </div>
-
-            <div>
-                Name:
-                <span id="myTicketName" style="font-weight:600;"></span>
-            </div>
-
+            <div id="myTicketNumber" class="ticket-number">#000</div>
+            <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
         </div>
-
-        <h3 style="color: #4b5563;">
-
-            Current Status:
-            <span id="myStatus" style="color:var(--accent);">
-                Waiting...
-            </span>
-
-        </h3>
-
-        <p style="text-align:center; color: #6b7280; font-size: 14px;">
-            Keep this tab open. Your phone will beep and flash when called!
-        </p>
-
+        <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
+        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open. Your phone will beep and flash when called!</p>
     </div>
 
+    <div id="receiptView" class="view">
+        <div class="receipt-container">
+            <h2 style="font-weight: normal; font-size: 22px; color: #333;">Your number is</h2>
+            <div id="receiptTicketNumber" class="receipt-number">#000</div>
+            <p class="receipt-note">(Kindly show this to the librarian’s counter)</p>
+            <button class="btn-done" onclick="finishTransaction()">Transaction Done</button>
+        </div>
+    </div>
 </div>
 
-<!-- NOTIFICATION OVERLAY -->
 <div id="notificationOverlay" class="overlay">
-
-    <h1>🔔 YOUR TURN! 🔔</h1>
-
-    <div
-        id="calledTicketDisplay"
-        style="font-size: 70px; font-weight: bold; margin: 20px 0;"
-    >
-        #000
-    </div>
-
-    <p>Please head over to the information desk now.</p>
-
-    <button class="btn-dismiss" onclick="dismissNotification()">
-        OK, I am heading over
-    </button>
-
+    <h1>YOUR TURN! 🔔</h1>
+    <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
+    <p>Please head over to the librarian's desk now.</p>
+    <button class="btn-dismiss" onclick="acknowledgeCall()">OK, I am heading over</button>
 </div>
 
 <script type="module">
@@ -235,10 +96,9 @@
         myStudentId = 'student_' + Date.now();
         localStorage.setItem('lib_student_id', myStudentId);
 
-        // Put placeholder text immediately while transaction runs
         document.getElementById('myTicketNumber').innerText = "Loading...";
         document.getElementById('myTicketName').innerText = name;
-        routeStudentView();
+        routeStudentView('waiting');
 
         try {
             await runTransaction(db, async (transaction) => {
@@ -284,22 +144,25 @@
         }
     }
 
-    function routeStudentView() {
-        if (myStudentId) {
-            document.getElementById('registerView').classList.remove('active-view');
-            document.getElementById('waitView').classList.add('active-view');
-        } else {
-            document.getElementById('waitView').classList.remove('active-view');
+    // Handles view routing states safely (including page reloads)
+    function routeStudentView(statusState) {
+        document.getElementById('registerView').classList.remove('active-view');
+        document.getElementById('waitView').classList.remove('active-view');
+        document.getElementById('receiptView').classList.remove('active-view');
+
+        if (!myStudentId) {
             document.getElementById('registerView').classList.add('active-view');
+        } else if (statusState === 'called' || statusState === 'serving') {
+            document.getElementById('receiptView').classList.add('active-view');
+        } else {
+            document.getElementById('waitView').classList.add('active-view');
         }
     }
 
     function startListening() {
         if (!myStudentId) return;
-        
-        routeStudentView();
 
-        // Put temporary placeholders on browser refresh until database responds
+        // Apply loading placeholders on instant browser refresh
         if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
             document.getElementById('myTicketNumber').innerText = "Loading...";
             document.getElementById('myTicketName').innerText = "Syncing...";
@@ -312,16 +175,20 @@
             }
             const data = docSnap.data();
             
-            // Populating UI fields only when the network data securely arrives
+            // Populate all data fields 
             document.getElementById('myTicketNumber').innerText = data.ticket;
+            document.getElementById('receiptTicketNumber').innerText = data.ticket;
             document.getElementById('myTicketName').innerText = data.name;
             document.getElementById('myStatus').innerText = data.status.toUpperCase();
+
+            // Handle views based on remote database statuses
+            routeStudentView(data.status);
 
             if (data.status === 'called') {
                 triggerNotification(data.ticket);
             }
         }, (error) => {
-            console.error("Snapshot read failed: ", error);
+            console.error("Snapshot error: ", error);
         });
     }
 
@@ -336,15 +203,23 @@
         } catch(e){}
     }
 
-    window.dismissNotification = async function() {
+    // When student hits "OK, I am heading over" inside the flashy overlay
+    window.acknowledgeCall = async function() {
         document.getElementById('notificationOverlay').style.display = 'none';
+        if (myStudentId) {
+            try {
+                // Advance state status to 'serving' so overlay stays hidden, but screen remains on the Counter Receipt
+                await updateDoc(doc(db, "queue", myStudentId), { status: 'serving' });
+            } catch(e){}
+        }
+    }
+
+    // When they are finished working with you and click "Transaction Done"
+    window.finishTransaction = async function() {
         if (myStudentId) {
             try {
                 await updateDoc(doc(db, "queue", myStudentId), { status: 'completed' });
             } catch(e){}
-            localStorage.removeItem('lib_student_id');
-            myStudentId = null;
-            if(unsubscribe) unsubscribe();
             resetUI();
         }
     }
@@ -352,19 +227,20 @@
     function resetUI() {
         localStorage.removeItem('lib_student_id');
         myStudentId = null;
+        if (unsubscribe) unsubscribe();
         document.getElementById('studentName').value = '';
         document.getElementById('myTicketNumber').innerText = "#000";
+        document.getElementById('receiptTicketNumber').innerText = "#000";
         document.getElementById('myTicketName').innerText = "";
-        routeStudentView();
+        routeStudentView(null);
     }
 
-    // App Startup Verification
+    // App Initialization Engine
     if (myStudentId) { 
         startListening(); 
     } else {
-        routeStudentView();
+        routeStudentView(null);
     }
 </script>
-
 </body>
 </html>
