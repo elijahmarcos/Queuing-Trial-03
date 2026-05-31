@@ -209,31 +209,8 @@
 </div>
 
 <script type="module">
-
-    /*
-    =========================================================
-    FIREBASE IMPORTS
-    =========================================================
-    */
-
-    import {
-        initializeApp
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-
-    import {
-        getFirestore,
-        doc,
-        collection,
-        onSnapshot,
-        updateDoc,
-        runTransaction
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    /*
-    =========================================================
-    FIREBASE CONFIGURATION
-    =========================================================
-    */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
@@ -244,373 +221,149 @@
         appId: "1:524535705279:web:a579726cce8aab2e69600a"
     };
 
-    /*
-    =========================================================
-    INITIALIZE FIREBASE
-    =========================================================
-    */
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    /*
-    =========================================================
-    LOCAL VARIABLES
-    =========================================================
-    */
-
-    // Stores current student ID
     let myStudentId = localStorage.getItem('lib_student_id') || null;
-
-    // Used to stop Firestore listener later
     let unsubscribe = null;
 
-    /*
-    =========================================================
-    JOIN QUEUE FUNCTION
-    =========================================================
-    */
-
-    window.joinQueue = async function () {
-
-        // Prevent double-click spam
-        const button = document.getElementById('queueButton');
-        button.disabled = true;
-
-        // Get entered student name
+    window.joinQueue = async function() {
         const nameInput = document.getElementById('studentName');
         const name = nameInput.value.trim();
+        if (!name) return alert('Please enter your name');
 
-        // Prevent empty names
-        if (!name) {
-            button.disabled = false;
-            return alert('Please enter your name');
-        }
+        myStudentId = 'student_' + Date.now();
+        localStorage.setItem('lib_student_id', myStudentId);
+
+        // Put placeholder text immediately while transaction runs
+        document.getElementById('myTicketNumber').innerText = "Loading...";
+        document.getElementById('myTicketName').innerText = name;
+        routeStudentView();
 
         try {
-
-            /*
-            =========================================================
-            FIRESTORE TRANSACTION
-            =========================================================
-
-            Transactions prevent multiple devices from
-            receiving the same queue number.
-
-            Example:
-            Device A -> #001
-            Device B -> #002
-
-            Even if they click at the same time.
-            =========================================================
-            */
-
             await runTransaction(db, async (transaction) => {
-
-                // Reference to global counter document
                 const counterRef = doc(db, "config", "counter");
-
-                // Read current counter data
                 const counterSnap = await transaction.get(counterRef);
-
+                
                 let nextNum = 1;
-
-                // Current timestamp
                 const now = Date.now();
-
-                /*
-                =========================================================
-                RESET COUNTER AFTER 1 HOUR OF INACTIVITY
-                =========================================================
-                */
-
                 const oneHourInMs = 60 * 60 * 1000;
 
                 if (counterSnap.exists()) {
-
                     const data = counterSnap.data();
-
-                    // Last time someone joined queue
                     const lastActivity = data.lastActiveTime || 0;
 
-                    // Reset numbering if inactive too long
                     if (now - lastActivity > oneHourInMs) {
-
                         nextNum = 1;
-
                     } else {
-
-                        // Safely increment queue number
-                        nextNum = (data.currentValue || 0) + 1;
+                        nextNum = data.currentValue + 1;
                     }
                 }
-
-                /*
-                =========================================================
-                SAVE UPDATED COUNTER
-                =========================================================
-                */
-
-                transaction.set(counterRef, {
+                
+                transaction.set(counterRef, { 
                     currentValue: nextNum,
-                    lastActiveTime: now
+                    lastActiveTime: now 
                 }, { merge: true });
 
-                /*
-                =========================================================
-                FORMAT TICKET NUMBER
-
-                Example:
-                1 -> #001
-                12 -> #012
-                =========================================================
-                */
-
-                const ticketString =
-                    '#' + String(nextNum).padStart(3, '0');
-
-                /*
-                =========================================================
-                CREATE UNIQUE FIREBASE DOCUMENT ID
-
-                IMPORTANT:
-                This fixes the duplicate ID issue.
-
-                BEFORE:
-                student_ + Date.now()
-
-                AFTER:
-                Firebase auto-generates truly unique IDs.
-                =========================================================
-                */
-
-                const studentRef = doc(collection(db, "queue"));
-
-                // Save generated ID locally
-                myStudentId = studentRef.id;
-
-                localStorage.setItem(
-                    'lib_student_id',
-                    myStudentId
-                );
-
-                /*
-                =========================================================
-                SAVE STUDENT QUEUE RECORD
-                =========================================================
-                */
-
+                const ticketString = '#' + String(nextNum).padStart(3, '0');
+                const studentRef = doc(db, "queue", myStudentId);
+                
                 transaction.set(studentRef, {
-
-                    // Unique student ID
                     id: myStudentId,
-
-                    // Student name
                     name: name,
-
-                    // Queue number
                     ticket: ticketString,
-
-                    // Queue status
                     status: 'waiting',
-
-                    // Timestamp
                     timestamp: now
                 });
-
-                /*
-                =========================================================
-                UPDATE USER INTERFACE
-                =========================================================
-                */
-
-                document.getElementById(
-                    'myTicketNumber'
-                ).innerText = ticketString;
-
-                document.getElementById(
-                    'myTicketName'
-                ).innerText = name;
             });
 
-            // Start listening for updates
             startListening();
-
         } catch (e) {
-
             alert("Error joining queue: " + e.message);
-
-            // Re-enable button if error occurs
-            button.disabled = false;
-        }
-    }
-
-    /*
-    =========================================================
-    START REAL-TIME LISTENER
-    =========================================================
-    */
-
-    function startListening() {
-
-        if (!myStudentId) return;
-
-        // Switch UI views
-        document.getElementById('registerView')
-            .classList.remove('active-view');
-
-        document.getElementById('waitView')
-            .classList.add('active-view');
-
-        /*
-        =========================================================
-        REAL-TIME FIRESTORE LISTENER
-
-        This updates the UI automatically whenever
-        queue status changes.
-        =========================================================
-        */
-
-        unsubscribe = onSnapshot(
-
-            doc(db, "queue", myStudentId),
-
-            (docSnap) => {
-
-                // If queue entry deleted
-                if (!docSnap.exists()) {
-                    resetUI();
-                    return;
-                }
-
-                const data = docSnap.data();
-
-                // Update current status
-                document.getElementById('myStatus')
-                    .innerText = data.status.toUpperCase();
-
-                // Trigger notification if called
-                if (data.status === 'called') {
-                    triggerNotification(data.ticket);
-                }
-            }
-        );
-    }
-
-    /*
-    =========================================================
-    TRIGGER SOUND + OVERLAY NOTIFICATION
-    =========================================================
-    */
-
-    function triggerNotification(ticket) {
-
-        // Display called ticket
-        document.getElementById(
-            'calledTicketDisplay'
-        ).innerText = ticket;
-
-        // Show overlay
-        document.getElementById(
-            'notificationOverlay'
-        ).style.display = 'flex';
-
-        /*
-        =========================================================
-        PLAY BEEP SOUND
-        =========================================================
-        */
-
-        try {
-
-            const context =
-                new (window.AudioContext || window.webkitAudioContext)();
-
-            const osc = context.createOscillator();
-
-            osc.connect(context.destination);
-
-            osc.start();
-
-            osc.stop(context.currentTime + 0.4);
-
-        } catch(e) {}
-    }
-
-    /*
-    =========================================================
-    DISMISS NOTIFICATION
-    =========================================================
-    */
-
-    window.dismissNotification = async function () {
-
-        // Hide overlay
-        document.getElementById(
-            'notificationOverlay'
-        ).style.display = 'none';
-
-        if (myStudentId) {
-
-            /*
-            =========================================================
-            MARK QUEUE AS COMPLETED
-            =========================================================
-            */
-
-            await updateDoc(
-                doc(db, "queue", myStudentId),
-                { status: 'completed' }
-            );
-
-            // Clear local storage
-            localStorage.removeItem('lib_student_id');
-
-            myStudentId = null;
-
-            // Stop listener
-            if (unsubscribe) unsubscribe();
-
-            // Reset interface
             resetUI();
         }
     }
 
-    /*
-    =========================================================
-    RESET USER INTERFACE
-    =========================================================
-    */
+    function routeStudentView() {
+        if (myStudentId) {
+            document.getElementById('registerView').classList.remove('active-view');
+            document.getElementById('waitView').classList.add('active-view');
+        } else {
+            document.getElementById('waitView').classList.remove('active-view');
+            document.getElementById('registerView').classList.add('active-view');
+        }
+    }
+
+    function startListening() {
+        if (!myStudentId) return;
+        
+        routeStudentView();
+
+        // Put temporary placeholders on browser refresh until database responds
+        if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
+            document.getElementById('myTicketNumber').innerText = "Loading...";
+            document.getElementById('myTicketName').innerText = "Syncing...";
+        }
+
+        unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
+            if (!docSnap.exists()) {
+                resetUI();
+                return;
+            }
+            const data = docSnap.data();
+            
+            // Populating UI fields only when the network data securely arrives
+            document.getElementById('myTicketNumber').innerText = data.ticket;
+            document.getElementById('myTicketName').innerText = data.name;
+            document.getElementById('myStatus').innerText = data.status.toUpperCase();
+
+            if (data.status === 'called') {
+                triggerNotification(data.ticket);
+            }
+        }, (error) => {
+            console.error("Snapshot read failed: ", error);
+        });
+    }
+
+    function triggerNotification(ticket) {
+        document.getElementById('calledTicketDisplay').innerText = ticket;
+        document.getElementById('notificationOverlay').style.display = 'flex';
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            osc.connect(context.destination);
+            osc.start(); osc.stop(context.currentTime + 0.4);
+        } catch(e){}
+    }
+
+    window.dismissNotification = async function() {
+        document.getElementById('notificationOverlay').style.display = 'none';
+        if (myStudentId) {
+            try {
+                await updateDoc(doc(db, "queue", myStudentId), { status: 'completed' });
+            } catch(e){}
+            localStorage.removeItem('lib_student_id');
+            myStudentId = null;
+            if(unsubscribe) unsubscribe();
+            resetUI();
+        }
+    }
 
     function resetUI() {
-
-        // Clear textbox
+        localStorage.removeItem('lib_student_id');
+        myStudentId = null;
         document.getElementById('studentName').value = '';
-
-        // Switch views
-        document.getElementById('waitView')
-            .classList.remove('active-view');
-
-        document.getElementById('registerView')
-            .classList.add('active-view');
-
-        // Re-enable button
-        document.getElementById('queueButton').disabled = false;
+        document.getElementById('myTicketNumber').innerText = "#000";
+        document.getElementById('myTicketName').innerText = "";
+        routeStudentView();
     }
 
-    /*
-    =========================================================
-    AUTO-RESTORE SESSION
-
-    If user refreshes page, continue listening
-    to existing queue ticket.
-    =========================================================
-    */
-
-    if (myStudentId) {
-        startListening();
+    // App Startup Verification
+    if (myStudentId) { 
+        startListening(); 
+    } else {
+        routeStudentView();
     }
-
 </script>
 
 </body>
