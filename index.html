@@ -35,10 +35,10 @@
 
 <div class="container">
     <div id="registerView" class="view active-view">
-        <h1>📚 Library Queue</h1>
+        <h1>Library Queue</h1>
         <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
         <input type="text" id="studentName" placeholder="Enter Full Name" required>
-        <button onclick="joinQueue()">Get Ticket Number</button>
+        <button onclick="joinQueue()">Get Queueing Number</button>
     </div>
 
     <div id="waitView" class="view">
@@ -49,7 +49,7 @@
             <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
         </div>
         <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
-        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open. Your phone will beep and flash when called!</p>
+        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open and wait patiently. Your phone will beep and flash when called!</p>
     </div>
 
     <div id="receiptView" class="view">
@@ -63,9 +63,9 @@
 </div>
 
 <div id="notificationOverlay" class="overlay">
-    <h1>YOUR TURN! 🔔</h1>
+    <h1>🔔 YOUR TURN! 🔔</h1>
     <div id="calledTicketDisplay" style="font-size: 70px; font-weight: bold; margin: 20px 0;">#000</div>
-    <p>Please head over to the librarian's desk now.</p>
+    <p>Please head over to the Information Desk now.</p>
     <button class="btn-dismiss" onclick="acknowledgeCall()">OK, I am heading over</button>
 </div>
 
