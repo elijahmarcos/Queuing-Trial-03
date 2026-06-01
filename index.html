@@ -160,37 +160,45 @@
     }
 
     function startListening() {
-        if (!myStudentId) return;
+    if (!myStudentId) return;
 
-        // Apply loading placeholders on instant browser refresh
-        if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
-            document.getElementById('myTicketNumber').innerText = "Loading...";
-            document.getElementById('myTicketName').innerText = "Syncing...";
-        }
+    routeStudentView('waiting');
 
-        unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
-            if (!docSnap.exists()) {
-                resetUI();
-                return;
-            }
-            const data = docSnap.data();
-            
-            // Populate all data fields 
-            document.getElementById('myTicketNumber').innerText = data.ticket;
-            document.getElementById('receiptTicketNumber').innerText = data.ticket;
-            document.getElementById('myTicketName').innerText = data.name;
-            document.getElementById('myStatus').innerText = data.status.toUpperCase();
-
-            // Handle views based on remote database statuses
-            routeStudentView(data.status);
-
-            if (data.status === 'called') {
-                triggerNotification(data.ticket);
-            }
-        }, (error) => {
-            console.error("Snapshot error: ", error);
-        });
+    // Apply loading placeholders on instant browser refresh
+    if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
+        document.getElementById('myTicketNumber').innerText = "Loading...";
+        document.getElementById('myTicketName').innerText = "Syncing...";
     }
+
+    unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
+        if (!docSnap.exists()) {
+            resetUI();
+            return;
+        }
+        const data = docSnap.data();
+        
+        // ✨ THE FIX: If the librarian or student marks this completed, wipe local storage and reset!
+        if (data.status === 'completed') {
+            resetUI();
+            return;
+        }
+        
+        // Populate all data fields 
+        document.getElementById('myTicketNumber').innerText = data.ticket;
+        document.getElementById('receiptTicketNumber').innerText = data.ticket;
+        document.getElementById('myTicketName').innerText = data.name;
+        document.getElementById('myStatus').innerText = data.status.toUpperCase();
+
+        // Handle views based on remote database statuses
+        routeStudentView(data.status);
+
+        if (data.status === 'called') {
+            triggerNotification(data.ticket);
+        }
+    }, (error) => {
+        console.error("Snapshot error: ", error);
+    });
+}
 
     function triggerNotification(ticket) {
         document.getElementById('calledTicketDisplay').innerText = ticket;
