@@ -26,9 +26,12 @@
         /* Receipt View Formatting matching your design */
         .receipt-container { text-align: center; padding: 40px 10px; }
         .receipt-number { font-size: 90px; font-weight: bold; color: var(--primary); margin: 20px 0; }
-        .receipt-note { font-size: 18px; color: #333; margin-bottom: 50px; line-height: 1.4; }
-        .btn-done { background: transparent; color: #7f8c8d; border: 2px solid #bdc3c7; border-radius: 4px; padding: 12px 30px; width: auto; font-weight: normal; font-size: 18px; }
+        .receipt-note { font-size: 18px; color: #333; margin-bottom: 30px; line-height: 1.4; }
+        .btn-done { background: transparent; color: #7f8c8d; border: 2px solid #bdc3c7; border-radius: 4px; padding: 12px 30px; width: auto; font-weight: normal; font-size: 18px; margin-top: 20px; }
         .btn-done:hover { background: #eee; }
+
+        /* Unified CSS style for the live panel feed */
+        .now-serving-container { margin: 25px auto; text-align: center; background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; max-width: 280px; }
     </style>
 </head>
 <body>
@@ -48,15 +51,31 @@
             <div id="myTicketNumber" class="ticket-number">#000</div>
             <div>Name: <span id="myTicketName" style="font-weight:600;"></span></div>
         </div>
-        <h3 style="color: #4b5563;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
-        <p style="text-align:center; color: #6b7280; font-size: 14px;">Keep this tab open and wait patiently. Your phone will beep and flash when called!</p>
+        <h3 style="color: #4b5563; margin-bottom: 5px;">Current Status: <span id="myStatus" style="color:var(--accent);">Waiting...</span></h3>
+        
+        <div class="now-serving-container">
+            <h3 style="font-size: 16px; letter-spacing: 0.5px; color: #4b5563; margin-bottom: 8px; font-weight: bold;">NOW SERVING:</h3>
+            <div class="servingNumbersList" style="display: flex; flex-direction: column; gap: 6px; font-size: 28px; font-weight: bold;">
+                <span style="font-size: 15px; color: #9ca3af; font-weight: normal;">No transactions active</span>
+            </div>
+        </div>
+
+        <p style="text-align:center; color: #6b7280; font-size: 14px; margin-top: 20px;">Keep this tab open and wait patiently. Your phone will beep and flash when called!</p>
     </div>
 
     <div id="receiptView" class="view">
         <div class="receipt-container">
-            <h2 style="font-weight: normal; font-size: 22px; color: #333;">Your number is</h2>
+            <h2 style="font-weight: normal; font-size: 22px; color: #333; margin: 0;">Your number is</h2>
             <div id="receiptTicketNumber" class="receipt-number">#000</div>
             <p class="receipt-note">(Kindly show this to the librarian’s counter)</p>
+
+            <div class="now-serving-container">
+                <h3 style="font-size: 16px; letter-spacing: 0.5px; color: #4b5563; margin-bottom: 8px; font-weight: bold;">NOW SERVING:</h3>
+                <div class="servingNumbersList" style="display: flex; flex-direction: column; gap: 6px; font-size: 28px; font-weight: bold;">
+                    <span style="font-size: 15px; color: #9ca3af; font-weight: normal;">No transactions active</span>
+                </div>
+            </div>
+            
             <button class="btn-done" onclick="finishTransaction()">Transaction Done</button>
         </div>
     </div>
@@ -71,7 +90,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    // ✨ FIX: Added 'collection', 'query', 'where', and 'orderBy' into the Firestore SDK import mapping statement!
+    import { getFirestore, doc, collection, query, where, orderBy, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAGCeYS71U04T_7rp3yXb1zD9cz900mCUA",
@@ -87,6 +107,52 @@
 
     let myStudentId = localStorage.getItem('lib_student_id') || null;
     let unsubscribe = null;
+    let nowServingUnsubscribe = null;
+
+    // Stream Engine: Updates the "NOW SERVING" lists across both active panels
+    function initNowServingCounter() {
+        const qServingCounter = query(
+            collection(db, "queue"), 
+            where("status", "in", ["called", "serving"]), 
+            orderBy("timestamp", "asc")
+        );
+
+        nowServingUnsubscribe = onSnapshot(qServingCounter, (snapshot) => {
+            // Find all matching classes on the screen to update the layout synchronously
+            const lists = document.querySelectorAll('.servingNumbersList');
+            
+            lists.forEach(listContainer => {
+                listContainer.innerHTML = '';
+
+                if (snapshot.empty) {
+                    listContainer.innerHTML = `<span style="font-size: 15px; color: #9ca3af; font-weight: normal;">No transactions active</span>`;
+                    return;
+                }
+
+                let renderedCount = 0;
+                snapshot.forEach((docSnap) => {
+                    if (renderedCount < 3) {
+                        const record = docSnap.data();
+                        const numSpan = document.createElement('span');
+                        
+                        numSpan.style.color = '#365314'; // Matching green branding hex specifications
+                        numSpan.style.fontWeight = 'bold';
+                        numSpan.style.fontSize = '32px';
+                        numSpan.style.margin = '2px 0';
+                        numSpan.innerText = record.ticket;
+                        
+                        listContainer.appendChild(numSpan);
+                    }
+                    renderedCount++;
+                });
+            });
+        }, (error) => {
+            console.error("Error streaming live counter track views: ", error);
+        });
+    }
+
+    // Initialize the desk counter listener on startup
+    initNowServingCounter();
 
     window.joinQueue = async function() {
         const nameInput = document.getElementById('studentName');
@@ -144,7 +210,6 @@
         }
     }
 
-    // Handles view routing states safely (including page reloads)
     function routeStudentView(statusState) {
         document.getElementById('registerView').classList.remove('active-view');
         document.getElementById('waitView').classList.remove('active-view');
@@ -160,45 +225,41 @@
     }
 
     function startListening() {
-    if (!myStudentId) return;
+        if (!myStudentId) return;
 
-    routeStudentView('waiting');
+        routeStudentView('waiting');
 
-    // Apply loading placeholders on instant browser refresh
-    if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
-        document.getElementById('myTicketNumber').innerText = "Loading...";
-        document.getElementById('myTicketName').innerText = "Syncing...";
+        if (document.getElementById('myTicketNumber').innerText === "#000" || document.getElementById('myTicketNumber').innerText === "0") {
+            document.getElementById('myTicketNumber').innerText = "Loading...";
+            document.getElementById('myTicketName').innerText = "Syncing...";
+        }
+
+        unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
+            if (!docSnap.exists()) {
+                resetUI();
+                return;
+            }
+            const data = docSnap.data();
+            
+            if (data.status === 'completed') {
+                resetUI();
+                return;
+            }
+            
+            document.getElementById('myTicketNumber').innerText = data.ticket;
+            document.getElementById('receiptTicketNumber').innerText = data.ticket;
+            document.getElementById('myTicketName').innerText = data.name;
+            document.getElementById('myStatus').innerText = data.status.toUpperCase();
+
+            routeStudentView(data.status);
+
+            if (data.status === 'called') {
+                triggerNotification(data.ticket);
+            }
+        }, (error) => {
+            console.error("Snapshot error: ", error);
+        });
     }
-
-    unsubscribe = onSnapshot(doc(db, "queue", myStudentId), (docSnap) => {
-        if (!docSnap.exists()) {
-            resetUI();
-            return;
-        }
-        const data = docSnap.data();
-        
-        // ✨ THE FIX: If the librarian or student marks this completed, wipe local storage and reset!
-        if (data.status === 'completed') {
-            resetUI();
-            return;
-        }
-        
-        // Populate all data fields 
-        document.getElementById('myTicketNumber').innerText = data.ticket;
-        document.getElementById('receiptTicketNumber').innerText = data.ticket;
-        document.getElementById('myTicketName').innerText = data.name;
-        document.getElementById('myStatus').innerText = data.status.toUpperCase();
-
-        // Handle views based on remote database statuses
-        routeStudentView(data.status);
-
-        if (data.status === 'called') {
-            triggerNotification(data.ticket);
-        }
-    }, (error) => {
-        console.error("Snapshot error: ", error);
-    });
-}
 
     function triggerNotification(ticket) {
         document.getElementById('calledTicketDisplay').innerText = ticket;
@@ -211,18 +272,15 @@
         } catch(e){}
     }
 
-    // When student hits "OK, I am heading over" inside the flashy overlay
     window.acknowledgeCall = async function() {
         document.getElementById('notificationOverlay').style.display = 'none';
         if (myStudentId) {
             try {
-                // Advance state status to 'serving' so overlay stays hidden, but screen remains on the Counter Receipt
                 await updateDoc(doc(db, "queue", myStudentId), { status: 'serving' });
             } catch(e){}
         }
     }
 
-    // When they are finished working with you and click "Transaction Done"
     window.finishTransaction = async function() {
         if (myStudentId) {
             try {
@@ -243,7 +301,6 @@
         routeStudentView(null);
     }
 
-    // App Initialization Engine
     if (myStudentId) { 
         startListening(); 
     } else {
