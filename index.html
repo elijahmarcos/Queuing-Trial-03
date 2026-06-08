@@ -35,13 +35,12 @@
 <div class="container">
     <div id="registerView" class="view active-view">
         <h1>Library Queueing System</h1>
-        <p style="text-align:center; color:#6b7280;">Scan successful! Enter your name to queue up.</p>
-        <p style="text-align:center; color:#6b7280;"> <b>Disclaimer: </b> This system is still in early development, and errors may occur frequently.</p>
-        
-        <!-- Registration Fields matching image_12a2c2.png -->
+        <p style="text-align:center; color:#6b7280; margin-bottom: 5px;">Scan successful! Enter your name to queue up.</p>
+        <p style="text-align:center; color:#ef4444; font-size: 13px; margin-top: 0; font-weight: 500;">
+            ⚠️ <b>Disclaimer:</b> This system is still in early development, and errors may occur frequently.
+        </p>
         <input type="text" id="studentName" placeholder="Enter Full Name" required>
-        <input type="text" id="studentPurpose" placeholder="Enter Purpose (e.g. Thesis Submission, Graduation Clearance signing, etc.)" required>
-        
+        <input type="text" id="studentPurpose" placeholder="Enter Purpose (e.g., Thesis Submission, Clearance, etc.)" required>
         <button onclick="joinQueue()">Get Queueing Number</button>
     </div>
 
@@ -195,7 +194,7 @@
                 transaction.set(studentRef, {
                     id: myStudentId,
                     name: name,
-                    purpose: purpose, // ✨ Saves the raw text purpose string directly to the DB entry
+                    purpose: purpose,
                     ticket: ticketString,
                     status: 'waiting',
                     timestamp: now
@@ -291,13 +290,14 @@
         myStudentId = null;
         if (unsubscribe) unsubscribe();
         document.getElementById('studentName').value = '';
-        document.getElementById('studentPurpose').value = ''; // ✨ Resets purpose form field
+        document.getElementById('studentPurpose').value = '';
         document.getElementById('myTicketNumber').innerText = "#000";
         document.getElementById('receiptTicketNumber').innerText = "#000";
         document.getElementById('myTicketName').innerText = "";
         routeStudentView(null);
     }
 
+    // ✨ FIX: Restored active snapshot listening upon page reloads/tab focus events
     if (myStudentId) { 
         startListening(); 
     } else {
