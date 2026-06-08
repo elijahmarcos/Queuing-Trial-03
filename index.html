@@ -175,16 +175,16 @@
                 let nextNum = 1;
                 const now = Date.now();
 
+               // Inside index.html -> window.joinQueue transaction block:
                 if (counterSnap.exists()) {
                     const data = counterSnap.data();
                     const lastActivity = data.lastActiveTime || 0;
-
-                    // ✨ NEW DAILY RESET CHECK:
-                    // Convert both timestamps into local date strings (e.g., "June 8, 2026")
-                    const lastDateString = new Date(lastActivity).toDateString();
-                    const todayDateString = new Date(now).toDateString();
-
-                    // If the strings don't match, a new day has arrived! Reset counter to 1.
+                
+                    // ✨ OPTIMIZED DATE STRING COMPARISON
+                    // Using 'en-US' locale guarantees date strings match structurally regardless of individual phone languages
+                    const lastDateString = new Date(lastActivity).toLocaleDateString('en-US');
+                    const todayDateString = new Date(now).toLocaleDateString('en-US');
+                
                     if (todayDateString !== lastDateString) {
                         nextNum = 1;
                     } else {
