@@ -174,13 +174,18 @@
                 
                 let nextNum = 1;
                 const now = Date.now();
-                const oneHourInMs = 60 * 60 * 1000;
 
                 if (counterSnap.exists()) {
                     const data = counterSnap.data();
                     const lastActivity = data.lastActiveTime || 0;
 
-                    if (now - lastActivity > oneHourInMs) {
+                    // ✨ NEW DAILY RESET CHECK:
+                    // Convert both timestamps into local date strings (e.g., "June 8, 2026")
+                    const lastDateString = new Date(lastActivity).toDateString();
+                    const todayDateString = new Date(now).toDateString();
+
+                    // If the strings don't match, a new day has arrived! Reset counter to 1.
+                    if (todayDateString !== lastDateString) {
                         nextNum = 1;
                     } else {
                         nextNum = data.currentValue + 1;
